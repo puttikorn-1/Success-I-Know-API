@@ -3,7 +3,15 @@
 const express = require("express");
 const server = express();
 const path = require("path");
-
+const bodyparser = require("body-parser");
+const urlEncoded = bodyparser.urlencoded({
+    extended: true,
+    limit: "50mb",
+});
+const jsonEncoded = express.json({
+    limit: "50mb",
+});
+const cors = require("cors");
 
 // import config
 const config = require("./configs/config.js");
@@ -12,9 +20,14 @@ const config = require("./configs/config.js");
 const db = require('better-sqlite3')(path.join(__dirname + "/database/db.sqlite3"));
 
 
+// setup server
+server.use(cors());
+server.use(urlEncoded);
+server.use(jsonEncoded);
+
 
 // api 
-server.post("/api/status/change", async(req, res) =>{
+server.post("/api/status/change", urlEncoded, async(req, res) =>{
     const { machine_no, change_to } = req.body ?? {};
 
     if(!machine_no || !change_to){
@@ -51,7 +64,36 @@ server.post("/api/status/change", async(req, res) =>{
             error: err,
         });
     }
+});
+
+server.get("/api/status/check/:machine_no", async(req, res) =>{
+    const { machine_no } = req.params ?? {};
     
+    if(isNaN(machine_no)){
+        return res.json({
+            status: "FAIL",
+            error: "number only",
+        });
+    }
+
+    try{
+        const row = db.prepare(`SELECT * FROM washing_machine_${machine_no}_status`).get();
+        return res.json({
+            status: "SUCCESS",
+            error: null,
+            data: {
+                results: row,
+            }
+        });
+
+    }
+    catch(err){
+        console.log(err);
+        return res.json({
+            status: "FAIL",
+            error: err,
+        });
+    }
 });
 
 server.listen(config.server.port, () =>{
