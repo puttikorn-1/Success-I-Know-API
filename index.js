@@ -17,8 +17,7 @@ const cors = require("cors");
 const config = require("./configs/config.js");
 
 // database setup
-const db = require('better-sqlite3')(path.join(__dirname + "/database/db.sqlite3"));
-
+const { connection } = require("./database/connect.js")
 
 // setup server
 server.use(cors());
@@ -55,10 +54,18 @@ server.post("/api/status/change", urlEncoded, async(req, res) =>{
     }
 
     try {
-        db.prepare(`UPDATE washing_machine_${machine_no}_status SET status=?`).run(parseInt(change_to));
-        return res.json({
-            status: "SUCCESS",
-            error: null
+        connection.execute(`UPDATE kao_sik_status SET status=? WHERE machine_id=?`, [change_to, machine_no], async(error, results, fields) =>{
+            if(error){
+                return res.json({
+                    status: "FAIL",
+                    error: `mysql error : ${error}`
+                });
+            }
+
+            return res.json({
+                status: "SUCCESS",
+                error: null
+            });
         });
     }
     catch(err){
@@ -80,15 +87,29 @@ server.get("/api/status/check/:machine_no", async(req, res) =>{
     }
 
     try{
-        const row = db.prepare(`SELECT * FROM washing_machine_${machine_no}_status`).get();
-        return res.json({
-            status: "SUCCESS",
-            error: null,
-            data: {
-                results: row,
+        connection.execute(`SELECT * FROM kao_sik_status WHERE machine_id=?`, [machine_no], async(error, results, fields) =>{
+            if(error){
+                return res.json({
+                    status: "FAIL",
+                    error: `mysql error : ${error}`
+                });
             }
-        });
 
+            if(results.length === 0){
+                return res.json({
+                    status: "FAIL",
+                    error: "Cant find status data from this ID",
+                });
+            }
+
+            return res.json({
+                status: "SUCCESS",
+                error: null,
+                data: {
+                    results: results[0],
+                }
+            }); 
+        });
     }
     catch(err){
         console.log(err);
@@ -102,3 +123,5 @@ server.get("/api/status/check/:machine_no", async(req, res) =>{
 server.listen(config.server.port, () =>{
     console.log(`[Server] server started on port : ${config.server.port}`);
 });
+
+require("./database/connect.js").connect();
