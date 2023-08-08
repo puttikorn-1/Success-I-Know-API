@@ -21,7 +21,9 @@ const db = require('better-sqlite3')(path.join(__dirname + "/database/db.sqlite3
 
 
 // setup server
-server.use(cors());
+server.use(cors({
+    origin: ["http://127.0.0.1:5500"],
+}));
 server.use(urlEncoded);
 server.use(jsonEncoded);
 
