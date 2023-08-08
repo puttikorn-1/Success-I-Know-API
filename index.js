@@ -54,7 +54,7 @@ server.post("/api/status/change", urlEncoded, async(req, res) =>{
     }
 
     try {
-        connection.execute(`UPDATE kao-sik-status SET status=? WHERE machine_id=?`, [change_to, machine_no], async(error, results, fields) =>{
+        connection.execute('UPDATE `kao-sik-status` SET status=? WHERE machine_id=?', [change_to, machine_no], async(error, results, fields) =>{
             if(error){
                 return res.json({
                     status: "FAIL",
@@ -87,7 +87,7 @@ server.get("/api/status/check/:machine_no", async(req, res) =>{
     }
 
     try{
-        connection.execute(`SELECT * FROM kao-sik-status WHERE machine_id=?`, [String(machine_no)], async(error, results, fields) =>{
+        connection.execute('SELECT * FROM `kao-sik-status` WHERE machine_id=?', [String(machine_no)], async(error, results, fields) =>{
             if(error){
                 return res.json({
                     status: "FAIL",
